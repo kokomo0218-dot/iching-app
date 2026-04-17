@@ -196,7 +196,8 @@ input[type="text"]:focus {
   animation: fadeIn 0.3s ease;
 }
 .history-item.moving {
-  border-left: 4px solid var(--gold-color);
+  border-left: 4px solid #e53935;
+  background-color: #fff8f8;
 }
 
 /* Hexagram Result Area */
@@ -246,11 +247,39 @@ input[type="text"]:focus {
 .yao-yin .yao-segment {
   width: 45%;
 }
-.yao-moving.yao-yang .yao-segment {
-  background-color: var(--yang-color);
+.yao-moving .yao-segment {
+  background-color: #e53935 !important;
+  box-shadow: 0 0 8px rgba(229, 57, 53, 0.4);
 }
-.yao-moving.yao-yin .yao-segment {
-  background-color: var(--yin-color);
+
+.yao-target-glow {
+  animation: yao-glow 1.5s infinite ease-in-out;
+}
+
+@keyframes yao-glow {
+  0% { filter: drop-shadow(0 0 2px var(--gold-color)); transform: scale(1.0); }
+  50% { filter: drop-shadow(0 0 10px var(--gold-color)); transform: scale(1.02); }
+  100% { filter: drop-shadow(0 0 2px var(--gold-color)); transform: scale(1.0); }
+}
+
+.yao-line-wrapper {
+  margin-bottom: 8px;
+  position: relative;
+  width: 100px;
+  justify-content: center;
+}
+
+.target-arrow {
+  position: absolute;
+  right: 0px;
+  font-size: 1rem;
+  color: var(--gold-color);
+  animation: arrow-bounce 0.8s infinite alternate;
+}
+
+@keyframes arrow-bounce {
+  from { transform: translateX(5px); }
+  to { transform: translateX(0px); }
 }
 
 /* Interpretation Panel */

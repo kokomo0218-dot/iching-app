@@ -52,13 +52,16 @@ export default function CoinToss({ history, onToss }) {
             const actualIndex = history.length - 1 - i;
             return (
               <div key={actualIndex} className={`history-item ${h.moving ? 'moving' : ''}`}>
-                <div>
-                  <span style={{ fontWeight: '600', marginRight: '10px' }}>{actualIndex + 1}회차</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontWeight: '600', minWidth: '45px' }}>{actualIndex + 1}회차</span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                    {h.orig === 1 ? '—' : '- -'}
+                  </span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{currentYaoName[actualIndex]}</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ letterSpacing: '2px' }}>{h.coins.map(c => c ? '○' : '●').join('')}</div>
-                  <div style={{ fontSize: '0.8rem', color: h.moving ? 'var(--gold-color)' : 'var(--text-muted)' }}>
+                  <div style={{ letterSpacing: '2px', fontSize: '0.85rem' }}>{h.coins.map(c => c ? '○' : '●').join('')}</div>
+                  <div style={{ fontSize: '0.8rem', color: h.moving ? '#e53935' : 'var(--text-muted)', fontWeight: h.moving ? 'bold' : 'normal' }}>
                     {h.sasang} {h.moving && '(변효)'}
                   </div>
                 </div>

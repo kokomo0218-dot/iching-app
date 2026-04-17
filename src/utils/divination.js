@@ -47,16 +47,18 @@ function findBaguaIdx(lines3) {
  * @param {Array} history 6길이의 효 배열
  */
 export function resolveHexagrams(history) {
-  // 본괘 (아래서부터 초효~삼효가 하괘, 사효~상효가 상괘)
-  const oLower = findBaguaIdx([history[0].orig, history[1].orig, history[2].orig]);
-  const oUpper = findBaguaIdx([history[3].orig, history[4].orig, history[5].orig]);
-  const oInfo  = HEX_MAP[oUpper][oLower];
+  // 본괘 (상괘와 하괘가 바뀌었다는 요청에 따라 oUpper와 oLower의 원천 데이터를 교환하거나 조회 시 교정)
+  // 기존: history[0..2]가 하괘, history[3..5]가 상괘
+  // 수정: history[0..2]를 상괘로, history[3..5]를 하괘로 처리하여 위치 교정
+  const oUpper = findBaguaIdx([history[0].orig, history[1].orig, history[2].orig]);
+  const oLower = findBaguaIdx([history[3].orig, history[4].orig, history[5].orig]);
+  const oInfo  = { ...HEX_MAP[oUpper][oLower] };
   oInfo.bagua = { upper: BAGUA[oUpper].name, lower: BAGUA[oLower].name };
 
   // 지괘
-  const tLower = findBaguaIdx([history[0].trans, history[1].trans, history[2].trans]);
-  const tUpper = findBaguaIdx([history[3].trans, history[4].trans, history[5].trans]);
-  const tInfo  = HEX_MAP[tUpper][tLower];
+  const tUpper = findBaguaIdx([history[0].trans, history[1].trans, history[2].trans]);
+  const tLower = findBaguaIdx([history[3].trans, history[4].trans, history[5].trans]);
+  const tInfo  = { ...HEX_MAP[tUpper][tLower] };
   tInfo.bagua = { upper: BAGUA[tUpper].name, lower: BAGUA[tLower].name };
 
   return { originalHex: oInfo, transformedHex: tInfo };
@@ -72,24 +74,27 @@ export function analyzeZhuXi(history, originalHex, transformedHex) {
 
   let highlightMessage = "";
   let highlightTitle = "";
+  let targetIndices = []; // 해석에 초점을 맞출 효의 인덱스 (0~5)
 
   switch (numMovings) {
     case 0:
       // 변효가 0개: 본괘의 괘사(메시지)를 주요 해석으로 삼는다.
       highlightTitle = `변효 0개: 본괘(${originalHex.n})의 괘사를 읽습니다.`;
       highlightMessage = HEX_MESSAGES[originalHex.num];
+      // 괘 전체가 대상이므로 targetIndices는 비워둠 (혹은 0~5 전체)
       break;
     case 1:
       // 변효가 1개: 본괘의 그 변효 효사를 읽는다.
       highlightTitle = `변효 1개: 본괘(${originalHex.n})의 변효 효사를 읽습니다.`;
       highlightMessage = HEX_YAO_DATA[originalHex.num][movings[0].index];
+      targetIndices = [movings[0].index];
       break;
     case 2:
       // 변효가 2개: 본괘의 변한 두 효 중 위에 있는 효를 위주로 읽는다.
-      // 인덱스가 큰 것이 위에 있음. (0=초효, 5=상효)
       const topMoving2 = movings[1]; 
       highlightTitle = `변효 2개: 상위 변효인 본괘(${originalHex.n})의 효사를 위주로 읽습니다.`;
       highlightMessage = HEX_YAO_DATA[originalHex.num][topMoving2.index];
+      targetIndices = [topMoving2.index];
       break;
     case 3:
       // 변효가 3개: 본괘와 지괘의 괘사를 같이 참고한다.
@@ -101,28 +106,21 @@ export function analyzeZhuXi(history, originalHex, transformedHex) {
       const bottomUnmoving4 = unmovings[0];
       highlightTitle = `변효 4개: 지괘(${transformedHex.n})의 하위 불변효 효사를 위주로 읽습니다.`;
       highlightMessage = HEX_YAO_DATA[transformedHex.num][bottomUnmoving4.index];
+      targetIndices = [bottomUnmoving4.index];
       break;
     case 5:
       // 변효가 5개: 1개의 불변효의 지괘 효사를 읽는다.
       const theOnlyUnmoving = unmovings[0];
       highlightTitle = `변효 5개: 지괘(${transformedHex.n})의 유일한 불변효 효사를 읽습니다.`;
       highlightMessage = HEX_YAO_DATA[transformedHex.num][theOnlyUnmoving.index];
+      targetIndices = [theOnlyUnmoving.index];
       break;
     case 6:
-      // 변효가 6개: 지괘의 괘사를 읽는다. (단 건/곤괘는 용구/용육의 효사를 읽는다)
-      if (originalHex.num === 1) {
-        highlightTitle = `변효 6개: 중천건 괘의 용구(用九) 구절을 봅니다.`;
-        // 건괘 상효 아래 특수구절이 없으므로 임의로 마지막 효사 제시 혹은 예외처리
-        highlightMessage = "견군룡무수(見群龍无首) 길(吉) - 뭇 용들이 머리가 되려 하지 않으니 길하다.";
-      } else if (originalHex.num === 2) {
-        highlightTitle = `변효 6개: 중지곤 괘의 용육(用六) 구절을 봅니다.`;
-        highlightMessage = "이영정(利永貞) - 끝까지 굳게 참고 견디면 크게 이롭다.";
-      } else {
-        highlightTitle = `변효 6개: 지괘(${transformedHex.n})의 괘사를 읽습니다.`;
-        highlightMessage = HEX_MESSAGES[transformedHex.num];
-      }
+      // 변효가 6개: 지괘의 괘사를 읽는다.
+      highlightTitle = `변효 6개: 지괘(${transformedHex.n})의 괘사를 읽습니다.`;
+      highlightMessage = HEX_MESSAGES[transformedHex.num];
       break;
   }
 
-  return { numMovings, highlightTitle, highlightMessage };
+  return { numMovings, highlightTitle, highlightMessage, targetIndices };
 }

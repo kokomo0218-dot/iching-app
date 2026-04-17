@@ -1,7 +1,6 @@
 import { analyzeZhuXi } from '../utils/divination';
 
-// 하나의 괘(6개 효)를 그려주는 작은 컴포넌트
-function HexagramDrawing({ hexInfo, history, isTransformed }) {
+function HexagramDrawing({ hexInfo, history, isTransformed, targetIndices = [] }) {
   // history는 초효(0) ~ 상효(5) 순서로 들어옴
   // 그릴 때는 배열을 뒤집어 상효가 맨 위로 가게 렌더링
   const lines = [...history].reverse();
@@ -19,17 +18,21 @@ function HexagramDrawing({ hexInfo, history, isTransformed }) {
           const originalH = history[actualIndex];
           const isYang = isTransformed ? originalH.trans === 1 : originalH.orig === 1;
           const isMoving = originalH.moving;
+          const isTarget = targetIndices.includes(actualIndex);
           
           return (
-            <div key={actualIndex} className="yao-line">
-              {isYang ? (
-                <div className={`yao-segment ${!isTransformed && isMoving ? 'yao-moving yao-yang' : ''}`} style={{ width: '100%' }}></div>
-              ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                  <div className={`yao-segment ${!isTransformed && isMoving ? 'yao-moving yao-yin' : ''}`} style={{ width: '45%' }}></div>
-                  <div className={`yao-segment ${!isTransformed && isMoving ? 'yao-moving yao-yin' : ''}`} style={{ width: '45%' }}></div>
-                </div>
-              )}
+            <div key={actualIndex} className="yao-line-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className={`yao-line ${isTarget ? 'yao-target-glow' : ''}`}>
+                {isYang ? (
+                  <div className={`yao-segment yao-yang ${!isTransformed && isMoving ? 'yao-moving' : ''}`} style={{ width: '100%' }}></div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    <div className={`yao-segment yao-yin ${!isTransformed && isMoving ? 'yao-moving' : ''}`} style={{ width: '45%' }}></div>
+                    <div className={`yao-segment yao-yin ${!isTransformed && isMoving ? 'yao-moving' : ''}`} style={{ width: '45%' }}></div>
+                  </div>
+                )}
+              </div>
+              {isTarget && <span className="target-arrow" style={{ color: 'var(--gold-color)', fontWeight: 'bold' }}>◀</span>}
             </div>
           );
         })}
@@ -53,14 +56,24 @@ export default function ResultView({ question, history, originalHex, transformed
         </div>
 
         <div className="hex-display">
-          <HexagramDrawing hexInfo={originalHex} history={history} isTransformed={false} />
+          <HexagramDrawing 
+            hexInfo={originalHex} 
+            history={history} 
+            isTransformed={false} 
+            targetIndices={result.targetIndices} 
+          />
           
           <div className="hex-arrow">
             {result.numMovings > 0 ? '→' : ''}
           </div>
           
           {result.numMovings > 0 ? (
-            <HexagramDrawing hexInfo={transformedHex} history={history} isTransformed={true} />
+            <HexagramDrawing 
+              hexInfo={transformedHex} 
+              history={history} 
+              isTransformed={true} 
+              targetIndices={[]} // 지괘에서는 별도 하이라이트 없음 (필요시 추가)
+            />
           ) : (
             <div className="hex-column">
               <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '40px' }}>
