@@ -1,0 +1,282 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root {
+  --bg-color: #ffffff;
+  --surface-color: #f8f9fa;
+  --surface-hover: #f1f3f5;
+  --border-color: #e9ecef;
+  --text-main: #212529;
+  --text-muted: #868e96;
+  --primary: #343a40; /* 다크 그레이로 포인트를 주어 세련된 화이트에 어울리게 */
+  --primary-hover: #212529;
+  
+  --yang-color: #e03131; /* 양효 빨강 */
+  --yin-color: #1971c2;  /* 음효 파랑 */
+  --gold-color: #f59f00; /* 황금 포인트 */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  background-color: var(--surface-color);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  justify-content: center; /* 전체 화면에서 모바일 뷰 중앙정렬 */
+}
+
+#root {
+  width: 100%;
+  max-width: 480px; /* 스마트폰 레이아웃 */
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+header {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Main Container */
+main {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography & General */
+h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+}
+p {
+  font-size: 0.95rem;
+}
+
+/* Buttons */
+button {
+  font-family: inherit;
+  border: none;
+  background-color: var(--primary);
+  color: #fff;
+  padding: 14px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+button:active {
+  transform: translateY(1px);
+}
+button:disabled {
+  background-color: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+button.outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--border-color);
+}
+button.outline:hover {
+  background-color: var(--surface-hover);
+}
+
+/* Inputs */
+input[type="text"] {
+  width: 100%;
+  padding: 16px;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
+  margin-bottom: 20px;
+}
+input[type="text"]:focus {
+  border-color: var(--primary);
+}
+
+/* Step containers (Question, Toss, Result) */
+.step-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Coin Toss Animation Area */
+.coin-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+}
+.coins {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+.coin {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--surface-color);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.coin.tossing {
+  animation: flip 0.6s ease-in-out infinite;
+}
+@keyframes flip {
+  0% { transform: rotateY(0deg) translateY(0); }
+  50% { transform: rotateY(180deg) translateY(-20px); }
+  100% { transform: rotateY(360deg) translateY(0); }
+}
+
+.toss-history {
+  width: 100%;
+  margin-top: auto;
+}
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--surface-color);
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  animation: fadeIn 0.3s ease;
+}
+.history-item.moving {
+  border-left: 4px solid var(--gold-color);
+}
+
+/* Hexagram Result Area */
+.hex-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 30px 0;
+}
+.hex-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hex-arrow {
+  color: var(--border-color);
+  font-size: 1.5rem;
+  padding: 0 10px;
+}
+.hex-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+/* Hex Lines (Yao) */
+.hex-lines {
+  display: flex;
+  flex-direction: column-reverse; /* 상효가 위로, 초효가 아래로 가도록 */
+  gap: 6px;
+}
+.yao-line {
+  width: 70px;
+  height: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+.yao-segment {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: 2px;
+}
+.yao-yang .yao-segment {
+  width: 100%;
+}
+.yao-yin .yao-segment {
+  width: 45%;
+}
+.yao-moving.yao-yang .yao-segment {
+  background-color: var(--yang-color);
+}
+.yao-moving.yao-yin .yao-segment {
+  background-color: var(--yin-color);
+}
+
+/* Interpretation Panel */
+.result-panel {
+  background-color: var(--surface-color);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 10px;
+  margin-bottom: 30px;
+  border: 1px solid var(--border-color);
+}
+.result-panel h3 {
+  font-size: 1rem;
+  color: var(--gold-color);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+.result-panel .message {
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.question-echo {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 10px;
+}
