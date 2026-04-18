@@ -2,33 +2,34 @@ import { BAGUA, HEX_MAP, HEX_YAO_DATA, HEX_MESSAGES } from '../data/db';
 
 /**
  * 3개의 동전을 무작위로 던져 하나의 효(爻) 결과를 반환합니다.
- * 앞면(흰색)=3, 뒷면(검정)=2
- * 
- * 6: 노음(Old Yin) - 변효 (0 -> 1)
- * 7: 소양(Young Yang) - 불변 (1 -> 1)
- * 8: 소음(Young Yin) - 불변 (0 -> 0)
- * 9: 노양(Old Yang) - 변효 (1 -> 0)
+ * 사용자의 척전법 기준:
+ * - 앞면 3개: 노음(老陰) - 변효 (0 -> 1)
+ * - 뒷면 3개: 노양(老陽) - 변효 (1 -> 0)
+ * - 앞면 2개, 뒷면 1개: 소양(少陽) - 불변 (1 -> 1)
+ * - 뒷면 2개, 앞면 1개: 소음(少陰) - 불변 (0 -> 0)
  */
 export function tossCoins() {
-  let sum = 0;
   const coins = [];
+  let headCount = 0;
   for (let i = 0; i < 3; i++) {
     const isHead = Math.random() < 0.5;
-    coins.push(isHead); // true=앞면(3), false=뒷면(2)
-    sum += isHead ? 3 : 2;
+    coins.push(isHead); // true=앞면, false=뒷면
+    if (isHead) headCount++;
   }
   
   let sasang, orig, trans, moving;
-  switch (sum) {
-    case 6:  sasang = '노음'; orig = 0; trans = 1; moving = true; break;
-    case 7:  sasang = '소양'; orig = 1; trans = 1; moving = false; break;
-    case 8:  sasang = '소음'; orig = 0; trans = 0; moving = false; break;
-    case 9:  sasang = '노양'; orig = 1; trans = 0; moving = true; break;
-    // fallback
-    default: sasang = '소양'; orig = 1; trans = 1; moving = false; break;
+  
+  if (headCount === 3) {
+    sasang = '노음'; orig = 0; trans = 1; moving = true;
+  } else if (headCount === 0) {
+    sasang = '노양'; orig = 1; trans = 0; moving = true;
+  } else if (headCount === 2) {
+    sasang = '소양'; orig = 1; trans = 1; moving = false;
+  } else { // headCount === 1
+    sasang = '소음'; orig = 0; trans = 0; moving = false;
   }
   
-  return { coins, sum, sasang, orig, trans, moving };
+  return { coins, headCount, sasang, orig, trans, moving };
 }
 
 /**
@@ -44,20 +45,19 @@ function findBaguaIdx(lines3) {
 
 /**
  * 6번 던진 결과를 기반으로 본괘와 지괘 정보를 산출합니다.
- * @param {Array} history 6길이의 효 배열
+ * @param {Array} history 6길이의 효 배열 (0이 초효, 5가 상효)
  */
 export function resolveHexagrams(history) {
-  // 본괘 (상괘와 하괘가 바뀌었다는 요청에 따라 oUpper와 oLower의 원천 데이터를 교환하거나 조회 시 교정)
-  // 기존: history[0..2]가 하괘, history[3..5]가 상괘
-  // 수정: history[0..2]를 상괘로, history[3..5]를 하괘로 처리하여 위치 교정
-  const oUpper = findBaguaIdx([history[0].orig, history[1].orig, history[2].orig]);
-  const oLower = findBaguaIdx([history[3].orig, history[4].orig, history[5].orig]);
-  const oInfo  = { ...HEX_MAP[oUpper][oLower] };
+  // 사용자의 요청: 얻은 순서대로 아래(초효)부터 위(상효)를 향해 차례대로 그려 나감
+  // 하괘(내괘): 0, 1, 2효 / 상괘(외괘): 3, 4, 5효
+  const oLower = findBaguaIdx([history[0].orig, history[1].orig, history[2].orig]);
+  const oUpper = findBaguaIdx([history[3].orig, history[4].orig, history[5].orig]);
+  const oInfo  = { ...HEX_MAP[oUpper][oLower] }; // HEX_MAP[상][하] 구조
   oInfo.bagua = { upper: BAGUA[oUpper].name, lower: BAGUA[oLower].name };
 
-  // 지괘
-  const tUpper = findBaguaIdx([history[0].trans, history[1].trans, history[2].trans]);
-  const tLower = findBaguaIdx([history[3].trans, history[4].trans, history[5].trans]);
+  // 지괘 (변한 결과)
+  const tLower = findBaguaIdx([history[0].trans, history[1].trans, history[2].trans]);
+  const tUpper = findBaguaIdx([history[3].trans, history[4].trans, history[5].trans]);
   const tInfo  = { ...HEX_MAP[tUpper][tLower] };
   tInfo.bagua = { upper: BAGUA[tUpper].name, lower: BAGUA[tLower].name };
 
@@ -75,52 +75,54 @@ export function analyzeZhuXi(history, originalHex, transformedHex) {
   let highlightMessage = "";
   let highlightTitle = "";
   let targetIndices = []; // 해석에 초점을 맞출 효의 인덱스 (0~5)
+  let resultHex = '본괘'; // 어느 괘를 기준으로 읽는지
 
   switch (numMovings) {
     case 0:
-      // 변효가 0개: 본괘의 괘사(메시지)를 주요 해석으로 삼는다.
-      highlightTitle = `변효 0개: 본괘(${originalHex.n})의 괘사를 읽습니다.`;
+      highlightTitle = `[변효 0개] 본괘(${originalHex.n})의 괘사로 판단합니다.`;
       highlightMessage = HEX_MESSAGES[originalHex.num];
-      // 괘 전체가 대상이므로 targetIndices는 비워둠 (혹은 0~5 전체)
+      targetIndices = [0, 1, 2, 3, 4, 5]; // 전체 강조
       break;
     case 1:
-      // 변효가 1개: 본괘의 그 변효 효사를 읽는다.
-      highlightTitle = `변효 1개: 본괘(${originalHex.n})의 변효 효사를 읽습니다.`;
+      highlightTitle = `[변효 1개] 본괘(${originalHex.n})의 변효 ${YAO_NAMES[movings[0].index]} 효사로 판단합니다.`;
       highlightMessage = HEX_YAO_DATA[originalHex.num][movings[0].index];
       targetIndices = [movings[0].index];
       break;
     case 2:
-      // 변효가 2개: 본괘의 변한 두 효 중 위에 있는 효를 위주로 읽는다.
-      const topMoving2 = movings[1]; 
-      highlightTitle = `변효 2개: 상위 변효인 본괘(${originalHex.n})의 효사를 위주로 읽습니다.`;
-      highlightMessage = HEX_YAO_DATA[originalHex.num][topMoving2.index];
-      targetIndices = [topMoving2.index];
+      // 아래 효보다 위 효가 우선
+      const topMoving = movings[1]; 
+      highlightTitle = `[변효 2개] 본괘(${originalHex.n})의 변효 중 위쪽(${YAO_NAMES[topMoving.index]}) 효사가 주가 됩니다.`;
+      highlightMessage = HEX_YAO_DATA[originalHex.num][topMoving.index];
+      targetIndices = [topMoving.index];
       break;
     case 3:
-      // 변효가 3개: 본괘와 지괘의 괘사를 같이 참고한다.
-      highlightTitle = `변효 3개: 본괘(${originalHex.n})와 지괘(${transformedHex.n})의 괘사를 함께 읽습니다.`;
-      highlightMessage = `[본괘] ${HEX_MESSAGES[originalHex.num]}\n\n[지괘] ${HEX_MESSAGES[transformedHex.num]}`;
+      highlightTitle = `[변효 3개] 본괘(${originalHex.n})와 지괘(${transformedHex.n})의 괘사를 함께 봅니다. (본괘 위주)`;
+      highlightMessage = `[본괘-전체] ${HEX_MESSAGES[originalHex.num]}\n\n[지괘-참고] ${HEX_MESSAGES[transformedHex.num]}`;
+      targetIndices = [0, 1, 2, 3, 4, 5];
       break;
     case 4:
-      // 변효가 4개: 2개의 불변효 중 아래에 있는 효(하위 효)의 지괘 효사를 읽는다.
-      const bottomUnmoving4 = unmovings[0];
-      highlightTitle = `변효 4개: 지괘(${transformedHex.n})의 하위 불변효 효사를 위주로 읽습니다.`;
-      highlightMessage = HEX_YAO_DATA[transformedHex.num][bottomUnmoving4.index];
-      targetIndices = [bottomUnmoving4.index];
+      // 변하지 않은 두 효 중 아래쪽 효
+      const bottomUnmoving = unmovings[0];
+      highlightTitle = `[변효 4개] 지괘(${transformedHex.n})의 불변효 중 아래쪽(${YAO_NAMES[bottomUnmoving.index]}) 효사가 주가 됩니다.`;
+      highlightMessage = HEX_YAO_DATA[transformedHex.num][bottomUnmoving.index];
+      targetIndices = [bottomUnmoving.index];
+      resultHex = '지괘';
       break;
     case 5:
-      // 변효가 5개: 1개의 불변효의 지괘 효사를 읽는다.
-      const theOnlyUnmoving = unmovings[0];
-      highlightTitle = `변효 5개: 지괘(${transformedHex.n})의 유일한 불변효 효사를 읽습니다.`;
-      highlightMessage = HEX_YAO_DATA[transformedHex.num][theOnlyUnmoving.index];
-      targetIndices = [theOnlyUnmoving.index];
+      // 변하지 않은 유일한 효
+      const soleUnmoving = unmovings[0];
+      highlightTitle = `[변효 5개] 지괘(${transformedHex.n})의 유일한 불변효(${YAO_NAMES[soleUnmoving.index]}) 효사로 판단합니다.`;
+      highlightMessage = HEX_YAO_DATA[transformedHex.num][soleUnmoving.index];
+      targetIndices = [soleUnmoving.index];
+      resultHex = '지괘';
       break;
     case 6:
-      // 변효가 6개: 지괘의 괘사를 읽는다.
-      highlightTitle = `변효 6개: 지괘(${transformedHex.n})의 괘사를 읽습니다.`;
+      highlightTitle = `[변효 6개] 지괘(${transformedHex.n})의 괘사로 판단합니다.`;
       highlightMessage = HEX_MESSAGES[transformedHex.num];
+      targetIndices = [0, 1, 2, 3, 4, 5];
+      resultHex = '지괘';
       break;
   }
 
-  return { numMovings, highlightTitle, highlightMessage, targetIndices };
+  return { numMovings, highlightTitle, highlightMessage, targetIndices, resultHex };
 }

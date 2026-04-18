@@ -227,59 +227,84 @@ input[type="text"]:focus {
 /* Hex Lines (Yao) */
 .hex-lines {
   display: flex;
-  flex-direction: column-reverse; /* 상효가 위로, 초효가 아래로 가도록 */
-  gap: 6px;
-}
-.yao-line {
-  width: 70px;
-  height: 12px;
-  display: flex;
-  justify-content: space-between;
-}
-.yao-segment {
-  height: 100%;
-  background-color: var(--primary);
-  border-radius: 2px;
-}
-.yao-yang .yao-segment {
-  width: 100%;
-}
-.yao-yin .yao-segment {
-  width: 45%;
-}
-.yao-moving .yao-segment {
-  background-color: #e53935 !important;
-  box-shadow: 0 0 8px rgba(229, 57, 53, 0.4);
-}
-
-.yao-target-glow {
-  animation: yao-glow 1.5s infinite ease-in-out;
-}
-
-@keyframes yao-glow {
-  0% { filter: drop-shadow(0 0 2px var(--gold-color)); transform: scale(1.0); }
-  50% { filter: drop-shadow(0 0 10px var(--gold-color)); transform: scale(1.02); }
-  100% { filter: drop-shadow(0 0 2px var(--gold-color)); transform: scale(1.0); }
+  flex-direction: column; /* 아래서 위로 쌓이는 구조 (초효~상효) */
+  gap: 8px;
 }
 
 .yao-line-wrapper {
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   position: relative;
+  min-width: 140px;
+  height: 24px;
+}
+
+.yao-line {
   width: 100px;
-  justify-content: center;
+  height: 14px;
+  display: flex;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+.yao-segment {
+  height: 100%;
+  background-color: var(--primary);
+  border-radius: 4px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.yao-yang .yao-segment {
+  width: 100%;
+}
+
+.yao-yin .yao-segment {
+  width: 46%;
+}
+
+/* 본괘에서 변하는 효 (빨간색 강조) */
+.yao-moving .yao-segment {
+  background-color: #ff4d4f !important;
+  box-shadow: 0 0 12px rgba(255, 77, 79, 0.5);
+}
+
+/* 지괘에서 변한 효 (보라색/골드 하이라이트) */
+.yao-changed .yao-segment {
+  background-color: #722ed1 !important;
+  box-shadow: 0 0 12px rgba(114, 46, 209, 0.4);
+  animation: pulse-changed 2s infinite ease-in-out;
+}
+
+@keyframes pulse-changed {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; transform: scaleX(1.02); }
+  100% { opacity: 1; }
+}
+
+/* 주자 7단계 해석 타겟 강조 (골드 글로우) */
+.yao-target-glow .yao-segment {
+  background-color: var(--gold-color) !important;
+  box-shadow: 0 0 20px var(--gold-color);
+  animation: target-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes target-pulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.3); }
+  100% { transform: scale(1); filter: brightness(1); }
 }
 
 .target-arrow {
-  position: absolute;
-  right: 0px;
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: var(--gold-color);
-  animation: arrow-bounce 0.8s infinite alternate;
+  animation: arrow-float 0.8s infinite alternate;
+  filter: drop-shadow(0 0 5px var(--gold-color));
 }
 
-@keyframes arrow-bounce {
-  from { transform: translateX(5px); }
-  to { transform: translateX(0px); }
+@keyframes arrow-float {
+  from { transform: translateX(4px); opacity: 0.5; }
+  to { transform: translateX(-4px); opacity: 1; }
 }
 
 /* Interpretation Panel */

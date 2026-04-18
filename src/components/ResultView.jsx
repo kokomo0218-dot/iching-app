@@ -1,38 +1,43 @@
 import { analyzeZhuXi } from '../utils/divination';
 
-function HexagramDrawing({ hexInfo, history, isTransformed, targetIndices = [] }) {
-  // history는 초효(0) ~ 상효(5) 순서로 들어옴
-  // 그릴 때는 배열을 뒤집어 상효가 맨 위로 가게 렌더링
-  const lines = [...history].reverse();
+function HexagramDrawing({ hexInfo, history, isTransformed, targetIndices = [], showTarget = false }) {
+  // history: [0..5] (초효..상효)
+  // 화면에 그릴 때는 상효(5)가 맨 위로 가야 하므로 배열을 뒤집음
+  const drawOrder = [5, 4, 3, 2, 1, 0];
   
   return (
     <div className="hex-column">
       <div className="hex-name">{hexInfo.num}. {hexInfo.n}</div>
-      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-        상: {hexInfo.bagua.upper} / 하: {hexInfo.bagua.lower}
+      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+        {hexInfo.bagua.upper} / {hexInfo.bagua.lower}
       </div>
       <div className="hex-lines">
-        {lines.map((h, i) => {
-          // i는 뒤집혀진 인덱스 (0이 상효, 5가 초효)
-          const actualIndex = 5 - i; 
-          const originalH = history[actualIndex];
-          const isYang = isTransformed ? originalH.trans === 1 : originalH.orig === 1;
-          const isMoving = originalH.moving;
-          const isTarget = targetIndices.includes(actualIndex);
+        {drawOrder.map((actualIndex) => {
+          const h = history[actualIndex];
+          const isYang = isTransformed ? h.trans === 1 : h.orig === 1;
+          const isMoving = h.moving;
+          const isTarget = showTarget && targetIndices.includes(actualIndex);
+          
+          // 지괘에서 변한 효인지 여부
+          const isChangedLine = isTransformed && isMoving;
           
           return (
-            <div key={actualIndex} className="yao-line-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className={`yao-line ${isTarget ? 'yao-target-glow' : ''}`}>
+            <div key={actualIndex} className="yao-line-wrapper">
+              <div className={`yao-line ${isYang ? 'yao-yang' : 'yao-yin'} ${isMoving && !isTransformed ? 'yao-moving' : ''} ${isChangedLine ? 'yao-changed' : ''} ${isTarget ? 'yao-target-glow' : ''}`}>
                 {isYang ? (
-                  <div className={`yao-segment yao-yang ${!isTransformed && isMoving ? 'yao-moving' : ''}`} style={{ width: '100%' }}></div>
+                  <div className="yao-segment"></div>
                 ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                    <div className={`yao-segment yao-yin ${!isTransformed && isMoving ? 'yao-moving' : ''}`} style={{ width: '45%' }}></div>
-                    <div className={`yao-segment yao-yin ${!isTransformed && isMoving ? 'yao-moving' : ''}`} style={{ width: '45%' }}></div>
-                  </div>
+                  <>
+                    <div className="yao-segment"></div>
+                    <div className="yao-segment"></div>
+                  </>
                 )}
               </div>
-              {isTarget && <span className="target-arrow" style={{ color: 'var(--gold-color)', fontWeight: 'bold' }}>◀</span>}
+              {isTarget && (
+                <div className="target-arrow" style={{ position: 'absolute', right: '-25px' }}>
+                  ◀
+                </div>
+              )}
             </div>
           );
         })}
@@ -43,6 +48,7 @@ function HexagramDrawing({ hexInfo, history, isTransformed, targetIndices = [] }
 
 export default function ResultView({ question, history, originalHex, transformedHex, onRestart }) {
   const result = analyzeZhuXi(history, originalHex, transformedHex);
+  const hasTransformed = result.numMovings > 0;
 
   return (
     <div className="step-container">
@@ -61,22 +67,24 @@ export default function ResultView({ question, history, originalHex, transformed
             history={history} 
             isTransformed={false} 
             targetIndices={result.targetIndices} 
+            showTarget={result.resultHex === '본괘'}
           />
           
-          <div className="hex-arrow">
-            {result.numMovings > 0 ? '→' : ''}
+          <div className="hex-arrow" style={{ fontSize: '2rem', opacity: 0.3 }}>
+            {hasTransformed ? '→' : ''}
           </div>
           
-          {result.numMovings > 0 ? (
+          {hasTransformed ? (
             <HexagramDrawing 
               hexInfo={transformedHex} 
               history={history} 
               isTransformed={true} 
-              targetIndices={[]} // 지괘에서는 별도 하이라이트 없음 (필요시 추가)
+              targetIndices={result.targetIndices} 
+              showTarget={result.resultHex === '지괘'}
             />
           ) : (
             <div className="hex-column">
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '40px' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '60px' }}>
                 변효가 없어<br/>지괘로 변하지 않습니다.
               </div>
             </div>
@@ -84,9 +92,21 @@ export default function ResultView({ question, history, originalHex, transformed
         </div>
 
         <div className="result-panel">
-          <span style={{ display: 'inline-block', backgroundColor: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 8px', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-            {result.highlightTitle}
-          </span>
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{ 
+              backgroundColor: 'var(--primary)', 
+              color: 'white', 
+              padding: '4px 10px', 
+              borderRadius: '20px', 
+              fontSize: '0.75rem', 
+              fontWeight: '600' 
+            }}>
+              {result.highlightTitle.split(']')[0] + ']'}
+            </span>
+            <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              {result.highlightTitle.split(']')[1]}
+            </span>
+          </div>
           <h3>핵심 해설</h3>
           <div className="message">{result.highlightMessage}</div>
         </div>
