@@ -1,4 +1,4 @@
-import { BAGUA, HEX_MAP, HEX_YAO_DATA, HEX_MESSAGES } from '../data/db';
+import { BAGUA, HEX_MAP, HEX_YAO_DATA, HEX_MESSAGES, YAO_NAMES } from '../data/db';
 
 /**
  * 3개의 동전을 무작위로 던져 하나의 효(爻) 결과를 반환합니다.

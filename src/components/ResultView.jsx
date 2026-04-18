@@ -93,19 +93,27 @@ export default function ResultView({ question, history, originalHex, transformed
 
         <div className="result-panel">
           <div style={{ marginBottom: '12px' }}>
-            <span style={{ 
-              backgroundColor: 'var(--primary)', 
-              color: 'white', 
-              padding: '4px 10px', 
-              borderRadius: '20px', 
-              fontSize: '0.75rem', 
-              fontWeight: '600' 
-            }}>
-              {result.highlightTitle.split(']')[0] + ']'}
-            </span>
-            <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              {result.highlightTitle.split(']')[1]}
-            </span>
+            {result.highlightTitle.includes(']') ? (
+              <>
+                <span style={{ 
+                  backgroundColor: 'var(--primary)', 
+                  color: 'white', 
+                  padding: '4px 10px', 
+                  borderRadius: '20px', 
+                  fontSize: '0.75rem', 
+                  fontWeight: '600' 
+                }}>
+                  {result.highlightTitle.split(']')[0] + ']'}
+                </span>
+                <span style={{ marginLeft: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {result.highlightTitle.split(']')[1]}
+                </span>
+              </>
+            ) : (
+              <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--primary)' }}>
+                {result.highlightTitle}
+              </span>
+            )}
           </div>
           <h3>핵심 해설</h3>
           <div className="message">{result.highlightMessage}</div>
