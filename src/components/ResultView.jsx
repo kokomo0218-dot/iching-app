@@ -13,7 +13,9 @@ function HexagramDrawing({ hexInfo, history, isTransformed, targetIndices = [], 
       </div>
       <div className="hex-lines">
         {drawOrder.map((actualIndex) => {
-          const h = history[actualIndex];
+          const h = history && history[actualIndex];
+          if (!h) return <div key={actualIndex} className="yao-line-placeholder" style={{ height: '24px' }}></div>;
+          
           const isYang = isTransformed ? h.trans === 1 : h.orig === 1;
           const isMoving = h.moving;
           const isTarget = showTarget && targetIndices.includes(actualIndex);

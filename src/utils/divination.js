@@ -68,57 +68,71 @@ export function resolveHexagrams(history) {
  * 주희(주자)의 점단 7단계 기준에 따라 핵심 해설을 결정합니다.
  */
 export function analyzeZhuXi(history, originalHex, transformedHex) {
+  // 방어 코드: 인자가 유효하지 않으면 기본값 반환
+  if (!history || history.length < 6 || !originalHex || !transformedHex) {
+    return { 
+      numMovings: 0, 
+      highlightTitle: "데이터 로딩 중...", 
+      highlightMessage: "결과를 계산할 수 없습니다.", 
+      targetIndices: [], 
+      resultHex: '본괘' 
+    };
+  }
+
   const movings = history.map((h, i) => ({ ...h, index: i })).filter(h => h.moving);
   const unmovings = history.map((h, i) => ({ ...h, index: i })).filter(h => !h.moving);
   const numMovings = movings.length;
 
   let highlightMessage = "";
   let highlightTitle = "";
-  let targetIndices = []; // 해석에 초점을 맞출 효의 인덱스 (0~5)
-  let resultHex = '본괘'; // 어느 괘를 기준으로 읽는지
+  let targetIndices = []; 
+  let resultHex = '본괘';
+
+  // db에서 안전하게 가져오기 위한 헬퍼
+  const getMessage = (num) => HEX_MESSAGES[num] || "해당 괘의 설명이 없습니다.";
+  const getYaoData = (num, idx) => (HEX_YAO_DATA[num] && HEX_YAO_DATA[num][idx]) || "해당 효의 설명이 없습니다.";
+  const getYaoName = (idx) => YAO_NAMES[idx] || `${idx + 1}효`;
 
   switch (numMovings) {
     case 0:
       highlightTitle = `[변효 0개] 본괘(${originalHex.n})의 괘사로 판단합니다.`;
-      highlightMessage = HEX_MESSAGES[originalHex.num];
-      targetIndices = [0, 1, 2, 3, 4, 5]; // 전체 강조
+      highlightMessage = getMessage(originalHex.num);
+      targetIndices = [0, 1, 2, 3, 4, 5];
       break;
     case 1:
-      highlightTitle = `[변효 1개] 본괘(${originalHex.n})의 변효 ${YAO_NAMES[movings[0].index]} 효사로 판단합니다.`;
-      highlightMessage = HEX_YAO_DATA[originalHex.num][movings[0].index];
-      targetIndices = [movings[0].index];
+      const m1 = movings[0];
+      highlightTitle = `[변효 1개] 본괘(${originalHex.n})의 변효 ${getYaoName(m1.index)} 효사로 판단합니다.`;
+      highlightMessage = getYaoData(originalHex.num, m1.index);
+      targetIndices = [m1.index];
       break;
     case 2:
-      // 아래 효보다 위 효가 우선
-      const topMoving = movings[1]; 
-      highlightTitle = `[변효 2개] 본괘(${originalHex.n})의 변효 중 위쪽(${YAO_NAMES[topMoving.index]}) 효사가 주가 됩니다.`;
-      highlightMessage = HEX_YAO_DATA[originalHex.num][topMoving.index];
+      const topMoving = movings[1] || movings[0]; 
+      highlightTitle = `[변효 2개] 본괘(${originalHex.n})의 변효 중 위쪽(${getYaoName(topMoving.index)}) 효사가 주가 됩니다.`;
+      highlightMessage = getYaoData(originalHex.num, topMoving.index);
       targetIndices = [topMoving.index];
       break;
     case 3:
-      highlightTitle = `[변효 3개] 본괘(${originalHex.n})와 지괘(${transformedHex.n})의 괘사를 함께 봅니다. (본괘 위주)`;
-      highlightMessage = `[본괘-전체] ${HEX_MESSAGES[originalHex.num]}\n\n[지괘-참고] ${HEX_MESSAGES[transformedHex.num]}`;
+      highlightTitle = `[변효 3개] 본괘(${originalHex.n})와 지괘(${transformedHex.n})의 괘사를 함께 봅니다.`;
+      highlightMessage = `[본괘-전체] ${getMessage(originalHex.num)}\n\n[지괘-참고] ${getMessage(transformedHex.num)}`;
       targetIndices = [0, 1, 2, 3, 4, 5];
       break;
     case 4:
-      // 변하지 않은 두 효 중 아래쪽 효
       const bottomUnmoving = unmovings[0];
-      highlightTitle = `[변효 4개] 지괘(${transformedHex.n})의 불변효 중 아래쪽(${YAO_NAMES[bottomUnmoving.index]}) 효사가 주가 됩니다.`;
-      highlightMessage = HEX_YAO_DATA[transformedHex.num][bottomUnmoving.index];
+      highlightTitle = `[변효 4개] 지괘(${transformedHex.n})의 불변효 중 아래쪽(${getYaoName(bottomUnmoving.index)}) 효사가 주가 됩니다.`;
+      highlightMessage = getYaoData(transformedHex.num, bottomUnmoving.index);
       targetIndices = [bottomUnmoving.index];
       resultHex = '지괘';
       break;
     case 5:
-      // 변하지 않은 유일한 효
       const soleUnmoving = unmovings[0];
-      highlightTitle = `[변효 5개] 지괘(${transformedHex.n})의 유일한 불변효(${YAO_NAMES[soleUnmoving.index]}) 효사로 판단합니다.`;
-      highlightMessage = HEX_YAO_DATA[transformedHex.num][soleUnmoving.index];
+      highlightTitle = `[변효 5개] 지괘(${transformedHex.n})의 유일한 불변효(${getYaoName(soleUnmoving.index)}) 효사로 판단합니다.`;
+      highlightMessage = getYaoData(transformedHex.num, soleUnmoving.index);
       targetIndices = [soleUnmoving.index];
       resultHex = '지괘';
       break;
     case 6:
       highlightTitle = `[변효 6개] 지괘(${transformedHex.n})의 괘사로 판단합니다.`;
-      highlightMessage = HEX_MESSAGES[transformedHex.num];
+      highlightMessage = getMessage(transformedHex.num);
       targetIndices = [0, 1, 2, 3, 4, 5];
       resultHex = '지괘';
       break;
