@@ -204,24 +204,33 @@ input[type="text"]:focus {
 .hex-display {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 30px 0;
+  justify-content: center; /* 좌우 균형을 위해 중앙 정렬 */
+  gap: 20px; /* 괘 사이 간격 고정 */
+  margin: 40px 0;
+  width: 100%;
 }
+
 .hex-column {
-  flex: 1;
+  flex: 0 1 auto; /* 내용물에 딱 맞게 폭 조절 */
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+
 .hex-arrow {
-  color: var(--border-color);
-  font-size: 1.5rem;
-  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 2rem;
+  width: 40px;
 }
+
 .hex-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 15px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--primary);
 }
 
 /* Hex Lines (Yao) */
@@ -234,9 +243,10 @@ input[type="text"]:focus {
 .yao-line-wrapper {
   display: flex;
   align-items: center;
+  justify-content: center; /* 라인 자체도 중앙 정렬 */
   gap: 12px;
   position: relative;
-  min-width: 140px;
+  width: 100%; /* 부모에 꽉 차게 */
   height: 24px;
 }
 
@@ -296,6 +306,8 @@ input[type="text"]:focus {
 }
 
 .target-arrow {
+  position: absolute;
+  left: calc(50% + 55px); /* 괘의 중앙에서 오른쪽으로 55px 이동한 지점 */
   font-size: 1.2rem;
   color: var(--gold-color);
   animation: arrow-float 0.8s infinite alternate;
