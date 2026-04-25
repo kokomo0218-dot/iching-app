@@ -2,6 +2,7 @@ import { BAGUA, HEX_MAP, HEX_YAO_DATA, HEX_MESSAGES, YAO_NAMES } from '../data/d
 
 /**
  * 3개의 동전을 무작위로 던져 하나의 효(爻) 결과를 반환합니다.
+ * SSoT(String Seed of Thought) 방식을 적용하여 무작위성을 확보합니다.
  * 사용자의 척전법 기준:
  * - 앞면 3개: 노음(老陰) - 변효 (0 -> 1)
  * - 뒷면 3개: 노양(老陽) - 변효 (1 -> 0)
@@ -12,7 +13,18 @@ export function tossCoins() {
   const coins = [];
   let headCount = 0;
   for (let i = 0; i < 3; i++) {
-    const isHead = Math.random() < 0.5;
+    // SSoT 메커니즘: 무작위 문자열(Seed)을 생성
+    const randomString = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
+    // Sum-Mod 연산: 문자열의 각 문자에 대한 ASCII 코드 값을 모두 합산
+    let asciiSum = 0;
+    for (let j = 0; j < randomString.length; j++) {
+      asciiSum += randomString.charCodeAt(j);
+    }
+    
+    // 합을 2로 나눈 나머지로 앞/뒷면 결정 (0: 앞면, 1: 뒷면)
+    const isHead = asciiSum % 2 === 0;
+    
     coins.push(isHead); // true=앞면, false=뒷면
     if (isHead) headCount++;
   }
